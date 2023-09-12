@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .voice-input-container {
+            text-align: center;
+            margin: 20px;
+        }
+        #voice-input {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #response-container {
+            text-align: center;
+            margin: 20px;
+        }
+        #response {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Jarvis AI</h1>
+    </header>
+    <main>
+        <div class="voice-input-container">
+            <button id="voice-input">Start Voice Input</button>
+        </div>
+        <div class="response-container">
+            <p id="response"></p>
+        </div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const voiceInputButton = document.getElementById('voice-input');
+            const responseElement = document.getElementById('response');
+            let recognizing = false;
+
+            // Function to send a request to the Python server
+            const sendRequest = () => {
+                fetch('/process_audio', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        responseElement.textContent = data.response;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        responseElement.textContent = 'Error processing audio';
+                    });
+            };
+
+            // Event listener for the voice input button
+            voiceInputButton.addEventListener('click', () => {
+                if (!recognizing) {
+                    recognizing = true;
+                    voiceInputButton.textContent = 'Stop Voice Input';
+                    responseElement.textContent = 'Listening...';
+
+                    // Send a request to the Python server to start voice recognition
+                    fetch('/start_recognition', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Voice recognition started successfully
+                                sendRequest();
+                            } else {
+                                responseElement.textContent = 'Error starting voice recognition';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            responseElement.textContent = 'Error starting voice recognition';
+                        });
+                } else {
+                    recognizing = false;
+                    voiceInputButton.textContent = 'Start Voice Input';
+                    responseElement.textContent = '';
+
+                    // Send a request to the Python server to stop voice recognition
+                    fetch('/stop_recognition', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.success) {
+                                console.error('Error stopping voice recognition');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
